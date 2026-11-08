@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PortfolioApi.Data;
+using PortfolioApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<PortfolioDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("PortfolioDb")));
+
+builder.Services.AddScoped<IProjectService, ProjectService>();
+
 var app = builder.Build();
 
 // ===== 2. Middleware pipeline (ná Build) =====
@@ -23,7 +27,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseAuthorization(); 
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
