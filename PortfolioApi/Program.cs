@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PortfolioApi.Data;
 using PortfolioApi.Entities;                               
 using PortfolioApi.Services;
+using PortfolioApi.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,12 +22,15 @@ builder.Services.AddIdentityApiEndpoints<User>()
     .AddEntityFrameworkStores<PortfolioDbContext>();
 
 builder.Services.AddAuthentication();                      
-builder.Services.AddAuthorization();                       
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(Policies.CanEditContent, policy =>
+        policy.RequireRole(Roles.Editor, Roles.Admin));                       
 
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IBlogpostService, BlogpostService>();
 
 var app = builder.Build();
+await DbSeeder.SeedAsync(app.Services, app.Configuration);
 
 // ===== 2. Middleware pipeline (ná Build) =====
 if (app.Environment.IsDevelopment())
