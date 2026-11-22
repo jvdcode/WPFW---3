@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;                  
 using Microsoft.AspNetCore.Mvc;
+using PortfolioApi.Auth;                                   
 using PortfolioApi.Dtos;
 using PortfolioApi.Services;
 
@@ -10,13 +12,12 @@ public class BlogpostsController : ControllerBase
 {
     private readonly IBlogpostService _blogpostService;
 
-    // De service komt binnen via dependency injection (constructorinjectie)
     public BlogpostsController(IBlogpostService blogpostService)
     {
         _blogpostService = blogpostService;
     }
 
-    // GET: api/blogposts
+    // GET: api/blogposts  → publiek
     [HttpGet]
     public async Task<ActionResult<List<BlogpostResponse>>> GetAll()
     {
@@ -24,7 +25,7 @@ public class BlogpostsController : ControllerBase
         return Ok(blogposts);
     }
 
-    // GET: api/blogposts/5
+    // GET: api/blogposts/5  → publiek
     [HttpGet("{id:int}")]
     public async Task<ActionResult<BlogpostResponse>> GetById(int id)
     {
@@ -38,8 +39,9 @@ public class BlogpostsController : ControllerBase
         return Ok(blogpost);
     }
 
-    // POST: api/blogposts
+    // POST: api/blogposts  → alleen Editor of Admin
     [HttpPost]
+    [Authorize(Policy = Policies.CanEditContent)]           
     public async Task<ActionResult<BlogpostResponse>> Create(CreateBlogpostRequest request)
     {
         var blogpost = await _blogpostService.CreateAsync(request);
@@ -47,8 +49,9 @@ public class BlogpostsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = blogpost.Id }, blogpost);
     }
 
-    // PUT: api/blogposts/5
+    // PUT: api/blogposts/5  → alleen Editor of Admin
     [HttpPut("{id:int}")]
+    [Authorize(Policy = Policies.CanEditContent)]           
     public async Task<ActionResult<BlogpostResponse>> Update(int id, UpdateBlogpostRequest request)
     {
         var blogpost = await _blogpostService.UpdateAsync(id, request);
@@ -61,8 +64,9 @@ public class BlogpostsController : ControllerBase
         return Ok(blogpost);
     }
 
-    // DELETE: api/blogposts/5
+    // DELETE: api/blogposts/5  → alleen Editor of Admin
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = Policies.CanEditContent)]           
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _blogpostService.DeleteAsync(id);
