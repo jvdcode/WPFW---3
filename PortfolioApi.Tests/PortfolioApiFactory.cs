@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PortfolioApi.Data;
 using PortfolioApi.Dtos;
 using PortfolioApi.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace PortfolioApi.Tests;
 
@@ -33,6 +34,9 @@ public class PortfolioApiFactory : WebApplicationFactory<Program>
     {
         // Omgeving "Testing": geen Swagger en geen user-secrets
         builder.UseEnvironment("Testing");
+        
+        // Geen logregels van de API tijdens de tests, zodat de testuitvoer leesbaar blijft
+        builder.ConfigureLogging(logging => logging.ClearProviders());
 
         // De connectionstring vervangen door die van de testdatabase
         builder.ConfigureAppConfiguration((context, config) =>
