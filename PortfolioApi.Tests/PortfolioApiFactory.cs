@@ -1,8 +1,13 @@
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using PortfolioApi.Data;
+using PortfolioApi.Dtos;
+using PortfolioApi.Entities;
 
 namespace PortfolioApi.Tests;
 
@@ -37,5 +42,62 @@ public class PortfolioApiFactory : WebApplicationFactory<Program>
                 ["ConnectionStrings:PortfolioDb"] = TestConnectionString
             });
         });
+    }
+
+    // ===== Hulpmethodes voor de tests =====
+
+    // Maakt een willekeurig wachtwoord dat aan de Identity-regels voldoet.
+    // Zo staat er geen vast wachtwoord in de repository.
+    public static string CreateTestPassword()
+    {
+        return $"Test-{Guid.NewGuid():N}aA1!";
+    }
+
+    // Maakt een unieke gebruiker met de gegeven rol en geeft een ingelogde client terug
+    public async Task<HttpClient> CreateClientWithRoleAsync(string role)
+    {
+        var email = $"{role.ToLower()}-{Guid.NewGuid():N}@test.local";
+        var password = CreateTestPassword();
+
+        // Gebruiker direct aanmaken via de UserManager (net als de seeder)
+        using (var scope = Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+            var user = new User
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(user, password);
+
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException("Testgebruiker kon niet worden aangemaakt.");
+            }
+
+            await userManager.AddToRoleAsync(user, role);
+        }
+
+        // Inloggen via de echte login-route, zodat de client de cookie krijgt
+        return await CreateLoggedInClientAsync(email, password);
+    }
+
+    // Logt in via POST /api/auth/login en geeft de client met cookie terug
+    public async Task<HttpClient> CreateLoggedInClientAsync(string email, string password)
+    {
+        var client = CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/auth/login", new LoginUserRequest
+        {
+            Email = email,
+            Password = password
+        });
+
+        response.EnsureSuccessStatusCode();
+
+        return client;
     }
 }
