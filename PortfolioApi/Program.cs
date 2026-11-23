@@ -47,3 +47,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Maakt Program zichtbaar voor het testproject (WebApplicationFactory<Program>)
+public partial class Program { }
